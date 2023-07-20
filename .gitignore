@@ -1,0 +1,6 @@
+# Ignore
+*.venv
+*artifacts
+*.ipynb
+
+### Exception files
