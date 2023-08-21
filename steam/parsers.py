@@ -37,8 +37,13 @@ class BaseParser:
 
     # outside params
     USER_AGENT = UserAgent()
+
+    # PROXIES = {
+    #     "https": "http://yZ1QYV:H997gs@46.232.11.238:8000"
+    # }
+
     PROXIES = {
-        "https": "http://yZ1QYV:H997gs@46.232.11.238:8000"
+        "https": "http://QP5BLU:W7Uzgw@176.124.44.67:8000"
     }
 
     def __init__(self, name: str = None) -> None:
@@ -55,7 +60,7 @@ class CsmoneyParser(BaseParser):
 
     # inside params
     URL = "https://cs.money/1.0/market/sell-orders?"
-    PARSER_OUTPUT_PATH = os.path.join(BaseParser.OUTPUT_PATH, 'csmoney')
+    PARSER_OUTPUT_PATH = os.path.join(BaseParser.OUTPUT_PATH, 'temp_csmoney')
     
     def __init__(self, name: str) -> None:
         super().__init__(name=name)
@@ -74,7 +79,7 @@ class CsmoneyParser(BaseParser):
             proxies=cls.PROXIES
         )
     
-    def create_request(self, url: str) -> None:
+    def _create_request(self, url: str) -> None:
         repeats = 5
         while repeats:
             response = self._create_response(url=url)
@@ -131,7 +136,7 @@ class CsmoneyParser(BaseParser):
             'stickers': item_stickers
         }
 
-    def run(self) -> Dict[str, Any]:
+    def _run(self) -> Dict[str, Any]:
         short_name = skins_info[self.name]['en_short_name']
         quality_alias = csmoney_db[self.name]['csmoney_quality_alias']
         isStatTrak = skins_info[self.name]['isStatTrak']
@@ -150,7 +155,7 @@ class CsmoneyParser(BaseParser):
                     "isSouvenir": isSouvenir
                 }
                 temp_url = self._create_href(**temp_url_params)
-                items = self.create_request(url=temp_url)
+                items = self._create_request(url=temp_url)
 
                 temp_result = list(map(
                     lambda elem: self._csmoney_skin_parser(item=elem),
@@ -162,7 +167,7 @@ class CsmoneyParser(BaseParser):
             if len(temp_result) < 60:
                 break
         
-    def save(self) -> None:
+    def _save(self) -> None:
         if not bool(self.result):
             return None
         
@@ -173,11 +178,21 @@ class CsmoneyParser(BaseParser):
             json.dump(self.result, file)
 
 
+class CsmoneyPipeline(CsmoneyParser):
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name=name)
+    
+    def run(self):
+        self._run()
+        self._save()
+
+
 class SteamParser(BaseParser):
 
     # inside params
     URL = "https://steamcommunity.com/market/itemordershistogram?country=EN&language=english&currency=1&item_nameid={steam_item_id}&two_factor=0"
-    PARSER_OUTPUT_PATH = os.path.join(BaseParser.OUTPUT_PATH, 'steam')
+    PARSER_OUTPUT_PATH = os.path.join(BaseParser.OUTPUT_PATH, 'temp_steam')
     
     def __init__(self, name: str) -> None:
         super().__init__(name=name)
@@ -196,7 +211,7 @@ class SteamParser(BaseParser):
             proxies=cls.PROXIES
         )
     
-    def create_request(self, url: str) -> None:
+    def _create_request(self, url: str) -> None:
         repeats = 5
         while repeats:
             response = self._create_response(url=url)
@@ -223,18 +238,18 @@ class SteamParser(BaseParser):
             'price': item_price
         }
 
-    def run(self) -> Dict[str, Any]:
+    def _run(self) -> Dict[str, Any]:
         url_params = {
             "steam_item_id": steam_db[self.name]['steam_id']
         }
         url = self._create_href(**url_params)
-        items = self.create_request(url=url)
+        items = self._create_request(url=url)
         self.result = list(map(
             lambda elem: self._steam_skin_parser(item=elem),
             items
         )) if items else []
     
-    def save(self) -> None:
+    def _save(self) -> None:
         if not bool(self.result):
             return None
 
@@ -242,3 +257,13 @@ class SteamParser(BaseParser):
         file_name = self.name.replace(' ', '_') + '.json'
         with open(os.path.join(self.PARSER_OUTPUT_PATH, file_name), mode='w', encoding='utf-8') as file:
             json.dump(self.result, file)
+
+
+class SteamPipeline(SteamParser):
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name=name)
+    
+    def run(self):
+        self._run()
+        self._save()
