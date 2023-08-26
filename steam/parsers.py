@@ -4,29 +4,15 @@ import requests
 import random
 import time
 from typing import Dict, Any
-from fake_useragent import UserAgent
 
 from definitions import ROOT_PATH
+from steam.utils.subs import load_json
 
 
 # load artifacts
-with open(os.path.join(ROOT_PATH, 'artifacts', 'csmoney_db.json'), mode='r', encoding='utf-8') as file:
-    csmoney_db = json.load(file)
-
-with open(os.path.join(ROOT_PATH, 'artifacts', 'skins_info.json'), mode='r', encoding='utf-8') as file:
-    skins_info = json.load(file)
-
-with open(os.path.join(ROOT_PATH, 'artifacts', 'steam_db.json'), mode='r', encoding='utf-8') as file:
-    steam_db = json.load(file)
-
-with open(os.path.join(ROOT_PATH, 'artifacts', 'skins.json'), mode='r', encoding='utf-8') as file:
-    unique_skins = json.load(file)
-
-with open(os.path.join(ROOT_PATH, 'artifacts', 'weapon_types.json'), mode='r', encoding='utf-8') as file:
-    unqiue_weapon_types = json.load(file)
-
-with open(os.path.join(ROOT_PATH, 'artifacts', 'weapons.json'), mode='r', encoding='utf-8') as file:
-    unqiue_weapons = json.load(file)
+skins_info = load_json(file_path=os.path.join(ROOT_PATH, 'artifacts', 'skins_info.json'))
+csmoney_db = load_json(file_path=os.path.join(ROOT_PATH, 'artifacts', 'csmoney_db.json'))
+steam_db = load_json(file_path=os.path.join(ROOT_PATH, 'artifacts', 'steam_db.json'))
 
 
 class BaseParser:
@@ -35,19 +21,18 @@ class BaseParser:
     OUTPUT_PATH = os.path.join(ROOT_PATH, 'artifacts', 'output')
     PARSER_OUTPUT_PATH = None
 
-    # outside params
-    USER_AGENT = UserAgent()
-
-    # PROXIES = {
-    #     "https": "http://yZ1QYV:H997gs@46.232.11.238:8000"
-    # }
-
-    PROXIES = {
-        "https": "http://QP5BLU:W7Uzgw@176.124.44.67:8000"
-    }
-
-    def __init__(self, name: str = None) -> None:
+    def __init__(self, name: str, **kwargs: Dict[str, Any]) -> None:
         self.name = name
+
+        if "headers" in kwargs:
+            self.headers = kwargs["headers"]
+        else:
+            self.headers = None
+        
+        if "proxies" in kwargs:
+            self.proxies = kwargs["proxies"]
+        else:
+            self.proxies = None
     
     def run(self) -> None:
         raise NotImplementedError('This is a parent class')
@@ -62,27 +47,21 @@ class CsmoneyParser(BaseParser):
     URL = "https://cs.money/1.0/market/sell-orders?"
     PARSER_OUTPUT_PATH = os.path.join(BaseParser.OUTPUT_PATH, 'temp_csmoney')
     
-    def __init__(self, name: str) -> None:
-        super().__init__(name=name)
+    def __init__(self, name: str, **kwargs: Dict[str, Any]) -> None:
+        super().__init__(name=name, **kwargs)
     
     @classmethod
-    def _create_href(cls, *args, **kwargs) -> str:
+    def _create_href(cls, **kwargs: Dict[str, Any]) -> str:
         return cls.URL + '&'.join([f"{elem[0]}={elem[1]}" for elem in list(kwargs.items())])
     
     @classmethod
-    def _create_response(cls, url: str) -> Any:
-        return requests.get(
-            url=url,
-            headers={
-                'user-agent': cls.USER_AGENT.random
-            },
-            proxies=cls.PROXIES
-        )
+    def _create_response(cls, **kwargs: Dict[str, Any]) -> Any:
+        return requests.get(**kwargs)
     
-    def _create_request(self, url: str) -> None:
-        repeats = 5
+    def _create_request(self, **kwargs: Dict[str, Any]) -> Any:
+        repeats = 2
         while repeats:
-            response = self._create_response(url=url)
+            response = self._create_response(**kwargs)
             if response.status_code == 200:
                 data = response.json()
                 if data:
@@ -155,7 +134,7 @@ class CsmoneyParser(BaseParser):
                     "isSouvenir": isSouvenir
                 }
                 temp_url = self._create_href(**temp_url_params)
-                items = self._create_request(url=temp_url)
+                items = self._create_request(url=temp_url, headers=self.headers, proxies=self.proxies)
 
                 temp_result = list(map(
                     lambda elem: self._csmoney_skin_parser(item=elem),
@@ -180,8 +159,8 @@ class CsmoneyParser(BaseParser):
 
 class CsmoneyPipeline(CsmoneyParser):
 
-    def __init__(self, name: str) -> None:
-        super().__init__(name=name)
+    def __init__(self, name: str, **kwargs: Dict[str, Any]) -> None:
+        super().__init__(name=name, **kwargs)
     
     def run(self):
         self._run()
@@ -194,27 +173,21 @@ class SteamParser(BaseParser):
     URL = "https://steamcommunity.com/market/itemordershistogram?country=EN&language=english&currency=1&item_nameid={steam_item_id}&two_factor=0"
     PARSER_OUTPUT_PATH = os.path.join(BaseParser.OUTPUT_PATH, 'temp_steam')
     
-    def __init__(self, name: str) -> None:
-        super().__init__(name=name)
+    def __init__(self, name: str, **kwargs: Dict[str, Any]) -> None:
+        super().__init__(name=name, **kwargs)
     
     @classmethod
-    def _create_href(cls, *args, **kwargs):
+    def _create_href(cls, **kwargs):
         return cls.URL.format(**kwargs)
 
     @classmethod
-    def _create_response(cls, url: str) -> Any:
-        return requests.get(
-            url=url,
-            headers={
-                'user-agent': cls.USER_AGENT.random
-            },
-            proxies=cls.PROXIES
-        )
+    def _create_response(cls, **kwargs: Dict[str, Any]) -> Any:
+        return requests.get(**kwargs)
     
-    def _create_request(self, url: str) -> None:
-        repeats = 5
+    def _create_request(self, **kwargs: Dict[str, Any]) -> Any:
+        repeats = 2
         while repeats:
-            response = self._create_response(url=url)
+            response = self._create_response(**kwargs)
             if response.status_code == 200:
                 data = response.json()
                 if data:
@@ -243,7 +216,7 @@ class SteamParser(BaseParser):
             "steam_item_id": steam_db[self.name]['steam_id']
         }
         url = self._create_href(**url_params)
-        items = self._create_request(url=url)
+        items = self._create_request(url=url, headers=self.headers, proxies=self.proxies)
         self.result = list(map(
             lambda elem: self._steam_skin_parser(item=elem),
             items
@@ -261,8 +234,8 @@ class SteamParser(BaseParser):
 
 class SteamPipeline(SteamParser):
 
-    def __init__(self, name: str) -> None:
-        super().__init__(name=name)
+    def __init__(self, name: str, **kwargs: Dict[str, Any]) -> None:
+        super().__init__(name=name, **kwargs)
     
     def run(self):
         self._run()

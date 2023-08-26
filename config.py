@@ -5,7 +5,8 @@ from steam.artifacts import (
     SteamDatabase,
     CSMoneyDatabase,
     UniqueWeapons,
-    UniqueWeaponTypes
+    UniqueWeaponTypes,
+    Proxies
 )
 
 if __name__ == '__main__':
@@ -29,3 +30,6 @@ if __name__ == '__main__':
     
     weapon_types = UniqueWeaponTypes()
     weapon_types.run()
+
+    proxies = Proxies()
+    proxies.run()

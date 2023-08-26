@@ -155,6 +155,7 @@ class UniqueWeapons:
         with open(self.OUTPUT_PATH, mode='w', encoding='utf-8') as file:
             json.dump(self.weapons, file, ensure_ascii=True, indent=4)
 
+
 class UniqueWeaponTypes:
     INPUT_PATH = os.path.join(ROOT_PATH, 'artifacts', 'input_data.json')
     OUTPUT_PATH = os.path.join(ROOT_PATH, 'artifacts', 'weapon_types.json')
@@ -171,3 +172,18 @@ class UniqueWeaponTypes:
 
         with open(self.OUTPUT_PATH, mode='w', encoding='utf-8') as file:
             json.dump(self.weapon_types, file, ensure_ascii=True, indent=4)
+
+
+class Proxies:
+    INPUT_DATA = [
+        "http://yZ1QYV:H997gs@46.232.11.238:8000",
+        "http://QP5BLU:W7Uzgw@176.124.44.67:8000"
+    ]
+    OUTPUT_PATH = os.path.join(ROOT_PATH, 'artifacts', 'proxies.json')
+
+    def __init__(self) -> None:
+        pass
+
+    def run(self):
+        with open(self.OUTPUT_PATH, mode='w', encoding='utf-8') as file:
+            json.dump(self.INPUT_DATA, file, ensure_ascii=True, indent=4)
