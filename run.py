@@ -1,8 +1,10 @@
 import os
 import time
 import random
+import numpy as np
 import multiprocessing as mp
 from typing import Dict, Any
+from fake_useragent import UserAgent
 
 from definitions import ROOT_PATH
 from steam.parsers import CsmoneyPipeline, SteamPipeline
@@ -10,54 +12,60 @@ from steam.utils.subs import load_json
 
 
 def parse_csmoney_skin(name: str, **kwargs: Dict[str, Any]) -> None:
+
     print(f'Запуск csmoney потока по расчету {name}')
     csmoney_pipeline = CsmoneyPipeline(name=name, **kwargs)
     csmoney_pipeline.run()
 
+    file_name = name.replace(' ', '_') + '.json'
+    file_path = os.path.join(csmoney_pipeline.PARSER_OUTPUT_PATH, file_name)
+    if os.path.isfile(file_path):
+        print(f'SUCCESS: Csmoney поток по расчету {name} успешно выполнился')
+    else:
+        print(f'ERROR: Csmoney поток по расчету {name} завершился с ошибкой')
 
+def parse_steam_skin(name: str, **kwargs: Dict[str, Any]) -> None:
 
-# def create_csmoney_pipeline(name: str) -> None:
-#     print(f'Запуск csmoney потока по расчету {name}')
+    print(f'Запуск steam потока по расчету {name}')
+    steam_pipeline = SteamPipeline(name=name, **kwargs)
+    steam_pipeline.run()
 
-#     csmoney_pipeline = CsmoneyPipeline(name=name)
-#     csmoney_pipeline.run()
+    file_name = name.replace(' ', '_') + '.json'
+    file_path = os.path.join(steam_pipeline.PARSER_OUTPUT_PATH, file_name)
+    if os.path.isfile(file_path):
+        print(f'SUCCESS: Steam поток по расчету {name} успешно выполнился')
+    else:
+        print(f'ERROR: Steam поток по расчету {name} завершился с ошибкой')
 
-#     file_name = name.replace(' ', '_') + '.json'
-#     file_path = os.path.join(csmoney_pipeline.PARSER_OUTPUT_PATH, file_name)
+def parse_skin(name: str, kwargs: Dict[str, Any]) -> None:
+    parse_csmoney_skin(name=name, **kwargs)
+    parse_steam_skin(name=name, **kwargs)
+    time.sleep(7)
 
-#     if os.path.isfile(file_path):
-#         print(f'SUCCESS: Csmoney поток по расчету {name} успешно выполнился')
-#     else:
-#         print(f'ERROR: Csmoney поток по расчету {name} завершился с ошибкой')
+def main(n_jobs: int):
+    unique_skins = load_json(os.path.join(ROOT_PATH, 'artifacts', 'skins.json'))
+    proxies = load_json(os.path.join(ROOT_PATH, 'artifacts', 'proxies.json'))
+    skins_slice = np.random.choice(unique_skins, 25, replace=False)
 
-# def create_steam_pipeline(name: str) -> None:
-#     print(f'Запуск steam потока по расчету {name}')
+    num_proxies = len(proxies)
+    user_agent = UserAgent()
+    args = [
+        (
+            name,
+            {
+                "headers": {
+                    'user-agent': user_agent.random
+                },
+                "proxies": {
+                    "https": proxies[i % num_proxies]
+                }
+            }
+        )
+        for i, name in enumerate(skins_slice)
+    ]
+    
+    with mp.Pool(processes=n_jobs) as pool:
+        pool.starmap(parse_skin, args)
 
-#     steam_pipeline = SteamPipeline(name=name)
-#     steam_pipeline.run()
-
-#     file_name = name.replace(' ', '_') + '.json'
-#     file_path = os.path.join(steam_pipeline.PARSER_OUTPUT_PATH, file_name)
-
-#     if os.path.isfile(file_path):
-#         print(f'SUCCESS: Steam поток по расчету {name} успешно выполнился')
-#     else:
-#         print(f'ERROR: Steam поток по расчету {name} завершился с ошибкой')
-
-# def main(n_jobs: int) -> None:
-#     unique_skins = load_json(os.path.join('artifacts', 'skins.json'))
-#     skins_info = load_json(os.path.join('artifacts', 'skins_info.json'))
-#     parsed_skins = [elem for elem in unique_skins if skins_info[elem]['en_collection_name'] == 'The Operation Hydra Collection'][3:5]
-
-#     with mp.Pool(processes=n_jobs) as pool:
-
-#         csmoney_flow = pool.map_async(create_csmoney_pipeline, parsed_skins)
-#         steam_flow = pool.map_async(create_steam_pipeline, parsed_skins)
-
-#         csmoney_flow.wait()
-#         steam_flow.wait()
-
-#     print(f'Все потоки завершились')
-
-# if __name__ == '__main__':
-#     main(n_jobs=2)
+if __name__ == '__main__':
+    main(n_jobs=2)

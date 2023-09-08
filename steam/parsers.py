@@ -3,7 +3,8 @@ import json
 import requests
 import random
 import time
-from typing import Dict, Any
+from typing import List, Tuple, Dict, Any
+from fake_useragent import UserAgent
 
 from definitions import ROOT_PATH
 from steam.utils.subs import load_json
@@ -13,6 +14,7 @@ from steam.utils.subs import load_json
 skins_info = load_json(file_path=os.path.join(ROOT_PATH, 'artifacts', 'skins_info.json'))
 csmoney_db = load_json(file_path=os.path.join(ROOT_PATH, 'artifacts', 'csmoney_db.json'))
 steam_db = load_json(file_path=os.path.join(ROOT_PATH, 'artifacts', 'steam_db.json'))
+proxies = load_json(file_path=os.path.join(ROOT_PATH, 'artifacts', 'proxies.json'))
 
 
 class BaseParser:
