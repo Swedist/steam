@@ -1,6 +1,51 @@
-# Ignore
-*.venv
-*artifacts
-*.ipynb
+# Byte-compiled / Python cache
+__pycache__/
+*.py[cod]
+*$py.class
 
-### Exception files
+# Virtual environments
+.venv/
+.env/
+# Poetry создаёт виртуальные окружения в кэше, но можно игнорировать локальный .venv
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+pytest_cache/
+
+# Ruff / Lint / Formatter
+.ruff_cache/
+# Black, isort не создают кэш по умолчанию, но можно добавить если есть
+
+# IDEs / editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*.local
+
+# Temporary files
+*.swp
+*~
+
+# Poetry
+*.lock
+
+# Other
+artifacts/

@@ -1,0 +1,57 @@
+[tool.poetry]
+name = "steam"
+version = "0.1.0"
+description = "Мой проект"
+authors = ["Swedist"]
+readme = "README.md"
+
+[[tool.poetry.packages]]
+include = "steam"
+from = "lib"
+
+[tool.poetry.dependencies]
+python = "3.11.9"
+requests = "^2.32.5"
+numpy = "^2.3.3"
+fake-useragent = "^2.2.0"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13"
+black = "^24.10"
+ruff = "^0.5.7"
+pytest = "^8.4"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+line_length = 99
+known_first_party = ["steam"]
+src_paths = ["lib/steam"]
+
+[tool.black]
+line-length = 99
+target-version = ["py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 99
+exclude = ["tests/*", ".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
